@@ -34,21 +34,16 @@ class PostController extends Controller
             $data = $request->validated();
             //$post = new Post();
             $post = (new DB)->new->Post;
-            $post->attachment = $file_name;
-            $post->title = $data['title'];
-            $post->body = $data['body'];
 
-            //$post = Post::make($data);
-            // $post->user()->associate($data['user_id']);
             $decoded_data = JWT::decode($token, new Key('example', 'HS256'));
             $decoded_data->data->id;
-            $comment['comments'] = array();
-            $post->insertOne($comment);
             $post->insertOne([
                 'user_id' => $decoded_data->data->id,
                 "attachment" => $file_name,
                 "title" => $data['title'],
-                "body" => $data['body']
+                "body" => $data['body'],
+                "attachment" => $data['attachment'],
+                "comments" => []
             ]);
             //$post->save();
             if ($post) {

@@ -18,6 +18,7 @@ class CreateCommentRequest extends FormRequest
         return [
             'post_id' => 'required|string',
             'comment' => 'required|string',
+            'attachment' => 'required',
             // 'commentable_id' => 'required|string',
             // 'commentable_type' => 'required|string',
         ];

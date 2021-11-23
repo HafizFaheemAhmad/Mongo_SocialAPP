@@ -45,28 +45,39 @@ class CommentController extends Controller
         $data = $request->validated();
 
         try {
-            $comment = Comment::make($data);
-            $comment = (new DB)->new->Post;
+            $collection = (new DB)->new->Post;
 
             $token = $request->bearerToken();
             $decoded_data = JWT::decode($token, new Key('example', 'HS256'));
-            $decoded_data->data->id;
 
-
-            // $decoded_data->data->user_id;
-            $comment->updateOne([
-                'user_id' => $decoded_data->data->id,
-                "post_id" => $data['post_id'],
-                "comment" => $data['comment'],
+            $comment['user_id'] = $decoded_data->data->id;
+            $comment['post_id'] = $data['post_id'];
+            $comment['comment'] = $data['comment'];
+            $file_name = null;
+            // converting base64 decoded image to simple image if exist
+            if (!empty($request['attachment'])) {
+                // upload Attachment
+                $destinationPath = storage_path('\post\users\\');
+                $request_type_aux = explode("/", $request['attachment']['mime']);
+                $attachment_extention = $request_type_aux[1];
+                $image_base64 = base64_decode($request['attachment']['data']);
+                $file_name = uniqid() . '.' . $attachment_extention;
+                $file = $destinationPath . $file_name;
+                // saving in local storage
+                file_put_contents($file, $image_base64);
+            }
+            $comment['attachment'] = $data['attachment'];
+            $collection->updateOne(
+                ['_id' => new \MongoDB\BSON\ObjectId($data['post_id'])],
                 [
                     '$push' => ['comments' => $comment]
                 ]
-            ]);
+            );
             //$comment->save();
             if ($comment) {
                 $success['message'] =  "Comment Create Successfully";
                 return response()->json([
-                    $success, 200, $comment
+                    $success, 200
                 ]);
             } else {
                 $success['message'] =  "Something went wrong";
