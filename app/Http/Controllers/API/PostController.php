@@ -8,11 +8,12 @@ use App\Http\Controllers\Controller;
 use \Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use MongoDB\Client as DB;
+use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
 
-// For save Post
+    // For save Post
 
     public function store(CreatePostRequest $request)
     {
@@ -59,19 +60,47 @@ class PostController extends Controller
         }
     }
 
-//For show Post
+    //For show Post
 
-    public function show($post)
+    public function show(Request $req, $post)
     {
-        $collection = (new DB)->new->Post;
-        $post_data = $collection->findOne([
-            '_id' => new \MongoDB\BSON\ObjectId($post)
-        ]);
+        $fid = $req->fid;
+        $token = request()->bearerToken();
+        $decoded_data = JWT::decode($token, new Key('example', 'HS256'));
+        //User::where("jwt_token", $token)->first();
+            $friend = (new DB)->new->Friend;
+            $friend_request_exist = $friend->findOne(
+                ['$or' => [
+                    [
+                        '$and' =>
+                        [
+                            ['userid_1' => $decoded_data->data->id], ['userid_2' => $fid]
+                        ]
+                    ], [
+                        '$and' =>
+                        [
+                            ['userid_2' => $decoded_data->data->id], ['userid_1' => $fid]
+                        ]
+                    ]
+                ]]
+            );
 
-        return response()->json($post_data);
+
+            if (!isset($friend_request_exist)) {
+                $collection = (new DB)->new->Post;
+                $post_data = $collection->findOne([
+                    '_id' => new \MongoDB\BSON\ObjectId($post)
+                ]);
+
+                return response()->json($post_data);
+            }
+         else {
+
+            return response()->json("Friend not exit", 404);
+        }
     }
 
-//for show all post
+    //for show all post
 
     public function showAll()
     {
@@ -83,7 +112,7 @@ class PostController extends Controller
         }
     }
 
-//For Update post
+    //For Update post
 
     public function UpdatePost(UpdatePostRequest $request)
     {
@@ -124,7 +153,7 @@ class PostController extends Controller
         }
     }
 
-//For Delete post
+    //For Delete post
 
     public function DeletePost($id)
     {
